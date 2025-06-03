@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Finance Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        background: #f3f5f9;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 1200px;
+        margin: auto;
+        padding: 20px;
+      }
+      h2 {
+        margin-top: 30px;
+        color: #333;
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        margin-top: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+      form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      input,
+      select,
+      button {
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        flex: 1 1 200px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+        border: none;
+        flex: 1 1 120px;
+        transition: background 0.3s;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+      th,
+      td {
+        padding: 10px;
+        text-align: center;
+      }
+      thead {
+        background: #007bff;
+        color: white;
+      }
+      tbody tr:nth-child(odd) {
+        background: #f9f9f9;
+      }
+      tbody tr:hover {
+        background: #eef;
+      }
+      .status {
+        margin-top: 10px;
+        color: green;
+        font-weight: bold;
+      }
+      canvas {
+        margin-top: 30px;
+        max-width: 100%;
+      }
+      @media (max-width: 300px) {
+        form {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📊 Personal Finance Tracker</h1>
+
+      <div class="card">
+        <h2>💰 Daily Income & Expenses</h2>
+        <form id="entryForm">
+          <input name="day" type="number" placeholder="Day" required />
+          <input name="month" type="number" placeholder="Month" required />
+          <input name="year" type="number" placeholder="Year" required />
+          <input name="income" type="number" placeholder="Income" />
+          <input name="income_note" type="text" placeholder="Income Source" />
+          <input name="food" type="number" placeholder="Food" />
+          <input name="food_note" type="text" placeholder="Food Note" />
+          <input name="travel" type="number" placeholder="Travel" />
+          <input name="travel_note" type="text" placeholder="Travel Note" />
+          <input name="clothes" type="number" placeholder="Clothes" />
+          <input name="clothes_note" type="text" placeholder="Clothes Note" />
+          <input name="others" type="number" placeholder="Others" />
+          <input name="others_note" type="text" placeholder="Others Note" />
+          <button type="submit">Save Entry</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>💳 Loan / Debt Tracker</h2>
+        <form id="loanForm">
+          <input name="day" type="number" placeholder="Day" required />
+          <input name="month" type="number" placeholder="Month" required />
+          <input name="year" type="number" placeholder="Year" required />
+          <input name="name" type="text" placeholder="Person Name" required />
+          <input name="amount" type="number" placeholder="Amount" required />
+          <select name="type">
+            <option value="debt">I Owe</option>
+            <option value="loan">They Owe Me</option>
+          </select>
+          <input name="note" type="text" placeholder="Reason/Note" />
+          <select name="status">
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+          <button type="submit">Save Loan/Debt</button>
+        </form>
+      </div>
+
+      <div class="status" id="statusText"></div>
+
+      <div class="card">
+        <h2>📅 Daily Summary Table</h2>
+        <table id="dataTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>📄 Loan/Debt Records</h2>
+        <table id="loanTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Name</th>
+              <th>Amount</th>
+              <th>Type</th>
+              <th>Note</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>📈 Finance Charts</h2>
+        <canvas id="lineChart"></canvas>
+        <canvas id="radarChart"></canvas>
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+
+   <script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlLCPD-d78GUTb9cMDOsB-AIlYiTRzncIdFvhwhzJHjxjlmFc38o6ZeocqFFjy5z47/exec";
+
+  const form = document.getElementById("entryForm");
+  const loanForm = document.getElementById("loanForm");
+  const statusText = document.getElementById("statusText");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    const date = `${data.get("year")}-${data.get("month").padStart(2, "0")}-${data.get("day").padStart(2, "0")}`;
+    const body = {
+      date,
+      income: data.get("income"),
+      income_note: data.get("income_note"),
+      food: data.get("food"),
+      food_note: data.get("food_note"),
+      travel: data.get("travel"),
+      travel_note: data.get("travel_note"),
+      clothes: data.get("clothes"),
+      clothes_note: data.get("clothes_note"),
+      others: data.get("others"),
+      others_note: data.get("others_note")
+    };
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      statusText.textContent = "✅ Entry saved!";
+      form.reset();
+    } catch (err) {
+      statusText.textContent = "❌ Error saving entry!";
+      console.error(err);
+    }
+  });
+
+  loanForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = new FormData(loanForm);
+    const date = `${data.get("year")}-${data.get("month").padStart(2, "0")}-${data.get("day").padStart(2, "0")}`;
+    const body = {
+      date,
+      name: data.get("name"),
+      amount: data.get("amount"),
+      type: data.get("type"),
+      note: data.get("note"),
+      status: data.get("status")
+    };
+
+    try {
+      await fetch(`${SCRIPT_URL}?path=loan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      statusText.textContent = "✅ Loan/Debt saved!";
+      loanForm.reset();
+    } catch (err) {
+      statusText.textContent = "❌ Error saving loan/debt!";
+      console.error(err);
+    }
+  });
+</script>
+
+  </body>
+</html>

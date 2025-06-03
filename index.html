@@ -170,71 +170,67 @@
     </div>
 
    <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlLCPD-d78GUTb9cMDOsB-AIlYiTRzncIdFvhwhzJHjxjlmFc38o6ZeocqFFjy5z47/exec";
+ <script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNEuwl3p703fRYHhnZXw4gJj9aHq2DM7EypYMz5ND2-iZlnZkBUvfMXuYaBETJUvrX/exec";
 
-  const form = document.getElementById("entryForm");
-  const loanForm = document.getElementById("loanForm");
-  const statusText = document.getElementById("statusText");
+document.getElementById("entryForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const data = new FormData(e.target);
+  const date = `${data.get("year")}-${data.get("month").padStart(2, "0")}-${data.get("day").padStart(2, "0")}`;
+  const body = {
+    date,
+    income: data.get("income"),
+    income_note: data.get("income_note"),
+    food: data.get("food"),
+    food_note: data.get("food_note"),
+    travel: data.get("travel"),
+    travel_note: data.get("travel_note"),
+    clothes: data.get("clothes"),
+    clothes_note: data.get("clothes_note"),
+    others: data.get("others"),
+    others_note: data.get("others_note")
+  };
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const data = new FormData(form);
-    const date = `${data.get("year")}-${data.get("month").padStart(2, "0")}-${data.get("day").padStart(2, "0")}`;
-    const body = {
-      date,
-      income: data.get("income"),
-      income_note: data.get("income_note"),
-      food: data.get("food"),
-      food_note: data.get("food_note"),
-      travel: data.get("travel"),
-      travel_note: data.get("travel_note"),
-      clothes: data.get("clothes"),
-      clothes_note: data.get("clothes_note"),
-      others: data.get("others"),
-      others_note: data.get("others_note")
-    };
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    document.getElementById("statusText").textContent = "✅ Entry saved!";
+    e.target.reset();
+  } catch (err) {
+    console.error(err);
+    document.getElementById("statusText").textContent = "❌ Error saving entry.";
+  }
+});
 
-    try {
-      await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      statusText.textContent = "✅ Entry saved!";
-      form.reset();
-    } catch (err) {
-      statusText.textContent = "❌ Error saving entry!";
-      console.error(err);
-    }
-  });
+document.getElementById("loanForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const data = new FormData(e.target);
+  const date = `${data.get("year")}-${data.get("month").padStart(2, "0")}-${data.get("day").padStart(2, "0")}`;
+  const body = {
+    date,
+    name: data.get("name"),
+    amount: data.get("amount"),
+    type: data.get("type"),
+    note: data.get("note"),
+    status: data.get("status")
+  };
 
-  loanForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const data = new FormData(loanForm);
-    const date = `${data.get("year")}-${data.get("month").padStart(2, "0")}-${data.get("day").padStart(2, "0")}`;
-    const body = {
-      date,
-      name: data.get("name"),
-      amount: data.get("amount"),
-      type: data.get("type"),
-      note: data.get("note"),
-      status: data.get("status")
-    };
-
-    try {
-      await fetch(`${SCRIPT_URL}?path=loan`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      statusText.textContent = "✅ Loan/Debt saved!";
-      loanForm.reset();
-    } catch (err) {
-      statusText.textContent = "❌ Error saving loan/debt!";
-      console.error(err);
-    }
-  });
+  try {
+    const res = await fetch(`${SCRIPT_URL}?path=loan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    document.getElementById("statusText").textContent = "✅ Loan/Debt saved!";
+    e.target.reset();
+  } catch (err) {
+    console.error(err);
+    document.getElementById("statusText").textContent = "❌ Error saving loan/debt.";
+  }
+});
 </script>
-
   </body>
 </html>

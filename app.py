@@ -5,7 +5,7 @@ import psycopg2
 from datetime import datetime
 import os
 
-DATABASE_URL = os.environ.get("postgres://finance_db_7ett_user:J6ajb4Zn4czzWEEksZkJi4VW8QBrdsZl@dpg-d1196i2dbo4c739pk9dg-a/finance_db_7ett")
+DATABASE_URL = os.environ.get("postgresql://finance_db_zftn_user:pik8SR07oBslfleX76JHFyIwQX7KWWWA@dpg-d11ceg15pdvs73erk74g-a/finance_db_zftn")
 
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')

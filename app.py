@@ -1,17 +1,24 @@
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 import urllib.parse
-import csv
 import psycopg2
 from datetime import datetime
 import os
 
-DATABASE_URL = os.environ.get("postgresql://finance_db_zftn_user:pik8SR07oBslfleX76JHFyIwQX7KWWWA@dpg-d11ceg15pdvs73erk74g-a/finance_db_zftn")
+# ✅ Get DB URL from environment variable
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+if not DATABASE_URL:
+    raise RuntimeError("❌ DATABASE_URL environment variable is not set!")
+
+# ✅ Convert 'postgresql://' to 'postgres://' for psycopg2 compatibility
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgres://", 1)
+
+# ✅ Connect to PostgreSQL
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 cur = conn.cursor()
 
-# Create tables if not exist
+# ✅ Create tables if they don't exist
 cur.execute("""
 CREATE TABLE IF NOT EXISTS finance_data (
     id SERIAL PRIMARY KEY,
@@ -91,8 +98,7 @@ class FinanceHandler(SimpleHTTPRequestHandler):
         else:
             super().do_GET()
 
-# ✅ Run server
-
+# ✅ Start server on correct port
 PORT = int(os.environ.get("PORT", 8000))
 print(f"🚀 Server running on port {PORT}")
 HTTPServer(('0.0.0.0', PORT), FinanceHandler).serve_forever()

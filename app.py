@@ -94,6 +94,7 @@ class FinanceHandler(SimpleHTTPRequestHandler):
             super().do_GET()
 
 # ✅ Run server
-PORT = 8000
-print(f"🚀 Server running at http://localhost:{PORT}")
-HTTPServer(('localhost', PORT), FinanceHandler).serve_forever()
+
+PORT = int(os.environ.get("PORT", 8000))
+print(f"🚀 Server running on port {PORT}")
+HTTPServer(('0.0.0.0', PORT), FinanceHandler).serve_forever()

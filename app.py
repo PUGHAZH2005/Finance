@@ -1,8 +1,43 @@
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 import urllib.parse
 import csv
+import psycopg2
 from datetime import datetime
 import os
+
+DATABASE_URL = os.environ.get("postgresql://finance_db_7ett_user:J6ajb4Zn4czzWEEksZkJi4VW8QBrdsZl@dpg-d1196i2dbo4c739pk9dg-a/finance_db_7ett")
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+cur = conn.cursor()
+
+# Create tables if not exist
+cur.execute("""
+CREATE TABLE IF NOT EXISTS finance_data (
+    id SERIAL PRIMARY KEY,
+    date DATE,
+    income NUMERIC,
+    income_note TEXT,
+    food NUMERIC,
+    food_note TEXT,
+    travel NUMERIC,
+    travel_note TEXT,
+    clothes NUMERIC,
+    clothes_note TEXT,
+    others NUMERIC,
+    others_note TEXT
+)
+""")
+cur.execute("""
+CREATE TABLE IF NOT EXISTS loan_debt (
+    id SERIAL PRIMARY KEY,
+    date DATE,
+    name TEXT,
+    amount NUMERIC,
+    type TEXT,
+    note TEXT,
+    status TEXT
+)
+""")
+conn.commit()
 
 class FinanceHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
@@ -10,7 +45,6 @@ class FinanceHandler(SimpleHTTPRequestHandler):
         body = self.rfile.read(content_length).decode()
         params = urllib.parse.parse_qs(body)
 
-        # 🚀 Handle main finance data
         if self.path == '/save':
             date = params.get('date', [datetime.today().strftime('%Y-%m-%d')])[0]
             income = params.get('income', ['0'])[0]
@@ -24,32 +58,16 @@ class FinanceHandler(SimpleHTTPRequestHandler):
             others = params.get('others', ['0'])[0]
             others_note = params.get('others_note', [''])[0]
 
-            row = [
-                date, income, income_note,
-                food, food_note,
-                travel, travel_note,
-                clothes, clothes_note,
-                others, others_note
-            ]
-
-            file_exists = os.path.isfile('finance_data.csv')
-            with open('finance_data.csv', 'a', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                if not file_exists:
-                    writer.writerow([
-                        'Date', 'Income', 'IncomeNote',
-                        'Food', 'FoodNote',
-                        'Travel', 'TravelNote',
-                        'Clothes', 'ClothesNote',
-                        'Others', 'OthersNote'
-                    ])
-                writer.writerow(row)
+            cur.execute("""
+            INSERT INTO finance_data (date, income, income_note, food, food_note, travel, travel_note, clothes, clothes_note, others, others_note)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (date, income, income_note, food, food_note, travel, travel_note, clothes, clothes_note, others, others_note))
+            conn.commit()
 
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(b'Saved')
+            self.wfile.write(b'Saved to DB')
 
-        # 💳 Handle loan/debt entries
         elif self.path == '/loan':
             date = params.get('date', [datetime.today().strftime('%Y-%m-%d')])[0]
             name = params.get('name', [''])[0]
@@ -58,39 +76,17 @@ class FinanceHandler(SimpleHTTPRequestHandler):
             note = params.get('note', [''])[0]
             status = params.get('status', ['open'])[0]
 
-            row = [date, name, amount, type_, note, status]
-
-            file_exists = os.path.isfile('loan_debt.csv')
-            with open('loan_debt.csv', 'a', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                if not file_exists:
-                    writer.writerow(['Date', 'Name', 'Amount', 'Type', 'Note', 'Status'])
-                writer.writerow(row)
+            cur.execute("""
+            INSERT INTO loan_debt (date, name, amount, type, note, status)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """, (date, name, amount, type_, note, status))
+            conn.commit()
 
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(b'Loan/Debt Saved')
+            self.wfile.write(b'Loan/Debt Saved to DB')
 
         else:
-            self.handle_static()
-
-    def handle_static(self):
-        # 📁 Serve loan_debt.csv if requested explicitly
-        if self.path == "/loan_debt.csv" and os.path.exists("loan_debt.csv"):
-            self.send_response(200)
-            self.send_header("Content-Type", "text/csv")
-            self.end_headers()
-            with open("loan_debt.csv", "rb") as f:
-                self.wfile.write(f.read())
-        # 📁 Serve finance_data.csv if requested explicitly
-        elif self.path == "/finance_data.csv" and os.path.exists("finance_data.csv"):
-            self.send_response(200)
-            self.send_header("Content-Type", "text/csv")
-            self.end_headers()
-            with open("finance_data.csv", "rb") as f:
-                self.wfile.write(f.read())
-        else:
-            # 🌐 Serve index.html, charts, and other static files
             super().do_GET()
 
 # ✅ Run server

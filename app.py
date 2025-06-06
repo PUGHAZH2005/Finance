@@ -6,6 +6,14 @@ from datetime import datetime
 import os
 
 DATABASE_URL = os.environ.get("postgresql://finance_db_7ett_user:J6ajb4Zn4czzWEEksZkJi4VW8QBrdsZl@dpg-d1196i2dbo4c739pk9dg-a/finance_db_7ett")
+# Fix prefix mismatch if needed
+if DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgres://", 1)
+
+if not DATABASE_URL:
+    raise RuntimeError("❌ DATABASE_URL is not set. Please set it in your Render environment.")
+
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 cur = conn.cursor()
 
